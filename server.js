@@ -6,6 +6,7 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const { GoogleSpreadsheet } = require('google-spreadsheet');
 import { JWT } from 'google-auth-library';
+
 dotenv.config();
 
 // Load Google Service Account credentials from an environment variable
@@ -22,6 +23,7 @@ const jwtClient = new JWT({
 });
 await jwtClient.authorize();
 
+// Load and access the "Paid" sheet
 const doc = new GoogleSpreadsheet('1wgsIPnScSk8JMPCvoEaa5YeeEkil9TjbniY1v1VTBfI');
 await doc.load({ auth: jwtClient });
 const sheet = doc.sheetsByTitle['Paid'];
@@ -41,7 +43,7 @@ app.post('/create-session', express.json(), async (req, res) => {
       mode: 'subscription',
       client_reference_id: clientEmail,
       success_url: `https://dman6969.github.io/group_saver/success.html?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `https://dman6969.github.io/group_saver/cancel.html`
+      cancel_url: `https://dman6969.github.io/group_saver/cancel.html`,
     });
     res.json({ sessionId: session.id });
   } catch (err) {
@@ -59,7 +61,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
   } catch (err) {
-    console.error('⚠️ Webhook signature verification failed.', err.message);
+    console.error('⚠️ Webhook signature verification failed:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
@@ -69,7 +71,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
       const email = session.client_reference_id || session.customer_email || 'unknown';
       const timestamp = new Date().toISOString();
 
-      // Fetch line item to get the price/product details
+      // Fetch the plan details
       const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 1 });
       const priceInfo = lineItems.data[0].price;
       const price = await stripe.prices.retrieve(priceInfo.id);
@@ -89,5 +91,6 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
   res.json({ received: true });
 });
 
+// Start server
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Listening on port ${port}`));
