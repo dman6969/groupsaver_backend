@@ -5,7 +5,8 @@ import dotenv from 'dotenv';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const { GoogleSpreadsheet } = require('google-spreadsheet');
-import { JWT } from 'google-auth-library';
+import pkg from 'google-auth-library';
+const { JWT } = pkg;
 
 dotenv.config();
 
