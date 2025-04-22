@@ -2,7 +2,9 @@ import express from 'express';
 import Stripe from 'stripe';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { GoogleSpreadsheet } from 'google-spreadsheet';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const { GoogleSpreadsheet } = require('google-spreadsheet');
 dotenv.config();
 
 // Load Google Service Account credentials from an environment variable
