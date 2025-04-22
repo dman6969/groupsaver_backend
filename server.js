@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const { GoogleSpreadsheet } = require('google-spreadsheet');
+import { JWT } from 'google-auth-library';
 dotenv.config();
 
 // Load Google Service Account credentials from an environment variable
@@ -13,10 +14,16 @@ const creds = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_CREDENTIALS);
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
-// Initialize Google Sheet for paid‑user tracking
+// Initialize Google Sheets API client with service account JWT
+const jwtClient = new JWT({
+  email: creds.client_email,
+  key: creds.private_key.replace(/\\n/g, '\n'),
+  scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+});
+await jwtClient.authorize();
+
 const doc = new GoogleSpreadsheet('1wgsIPnScSk8JMPCvoEaa5YeeEkil9TjbniY1v1VTBfI');
-await doc.useServiceAccountAuth(creds);
-await doc.loadInfo();
+await doc.load({ auth: jwtClient });
 const sheet = doc.sheetsByTitle['Paid'];
 
 const app = express();
