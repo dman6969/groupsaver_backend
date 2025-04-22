@@ -26,7 +26,8 @@ await jwtClient.authorize();
 
 // Load and access the "Paid" sheet
 const doc = new GoogleSpreadsheet('1wgsIPnScSk8JMPCvoEaa5YeeEkil9TjbniY1v1VTBfI');
-await doc.load({ auth: jwtClient });
+await doc.useJwtAuth(jwtClient);
+await doc.loadInfo();
 const sheet = doc.sheetsByTitle['Paid'];
 
 const app = express();
