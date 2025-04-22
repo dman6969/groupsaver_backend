@@ -15,9 +15,12 @@ const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 
-// Load and access the "Paid" sheet
+// Load and access the "Paid" sheet (using updated google-spreadsheet syntax)
 const doc = new GoogleSpreadsheet('1wgsIPnScSk8JMPCvoEaa5YeeEkil9TjbniY1v1VTBfI');
-await doc.useServiceAccountAuth(creds);
+await doc.useServiceAccountAuth({
+  client_email: creds.client_email,
+  private_key: creds.private_key,
+});
 await doc.loadInfo();
 const sheet = doc.sheetsByTitle['Paid'];
 
