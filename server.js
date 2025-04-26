@@ -8,9 +8,11 @@ const { GoogleSpreadsheet } = require('google-spreadsheet');
 
 dotenv.config();
 
-// Load Google Service Account credentials from local JSON file
+// Load Google Service Account credentials from local JSON file or environment variable
 import fs from 'fs';
-const creds = JSON.parse(fs.readFileSync('./sheets-credentials.json', 'utf8'));
+const creds = JSON.parse(
+  process.env.GSHEETS_CREDS || fs.readFileSync('./sheets-credentials.json', 'utf8')
+);
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
