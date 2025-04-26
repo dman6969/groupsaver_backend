@@ -49,6 +49,7 @@ app.post('/create-session', express.json(), async (req, res) => {
       client_reference_id: clientEmail,
       success_url: `https://dman6969.github.io/group_saver/success.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `https://dman6969.github.io/group_saver/cancel.html`,
+      expand: ['line_items.data.price.product']   // <- NEW: include full line_items in webhook payload
     });
     res.json({ sessionId: session.id });
   } catch (err) {
