@@ -26,7 +26,13 @@ await doc.loadInfo();
 const sheet = doc.sheetsByTitle['Paid'];
 
 const app = express();
-app.use(cors({ origin: 'https://dman6969.github.io' }));
+app.use(cors({
+  origin: [
+    'https://dman6969.github.io',   // production static site
+    'http://localhost:5500',        // local dev server for index.html
+    'http://localhost:3000'         // self‑origin (optional)
+  ]
+}));
 
 /**
  * Create a Stripe Checkout Session
