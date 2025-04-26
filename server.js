@@ -76,13 +76,31 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
       const email = session.client_reference_id || session.customer_email || 'unknown';
       const timestamp = new Date().toISOString();
 
-      // Fetch the plan details
-      const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 1 });
+      // ---------- Fetch the plan details ----------
+      // Some Stripe CLI fixtures return a session ID that no longer exists
+      // by the time we request listLineItems.  Instead, expand line_items
+      // right on the session so we always have them.
+      let lineItems;
+
+      if (session.line_items) {
+        // Already expanded (live checkout with expand or future API version)
+        lineItems = session.line_items;
+      } else {
+        // Retrieve again with the expand parameter so we get line_items
+        const sessWithItems = await stripe.checkout.sessions.retrieve(session.id, {
+          expand: ['line_items.data.price.product']
+        });
+        lineItems = sessWithItems.line_items;
+      }
+
       const priceInfo = lineItems.data[0].price;
-      const price = await stripe.prices.retrieve(priceInfo.id);
-      const product = await stripe.products.retrieve(price.product);
-      const planName = product.name || price.nickname || 'Unknown Plan';
-      const interval = price.recurring?.interval || 'one-time';
+      const product =
+        typeof priceInfo.product === 'string'
+          ? await stripe.products.retrieve(priceInfo.product)
+          : priceInfo.product;
+
+      const planName = product.name || priceInfo.nickname || 'Unknown Plan';
+      const interval = priceInfo.recurring?.interval || 'one-time';
       const fullPlan = `${planName} (${interval})`;
 
       // Append to Google Sheet
