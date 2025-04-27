@@ -1,3 +1,4 @@
+import { addEmail, removeEmail, isAllowed } from './whitelist.js';
 import express from 'express';
 import Stripe from 'stripe';
 import cors from 'cors';
@@ -36,6 +37,7 @@ const app = express();
 app.use(cors({
   origin: [
     'https://dman6969.github.io',   // production static site
+    'chrome-extension://*',      // allow extension requests
     'http://localhost:5500',        // local dev server for index.html
     'http://localhost:3000'         // self‑origin (optional)
   ]
@@ -65,6 +67,15 @@ app.post('/create-session', express.json(), async (req, res) => {
 });
 
 /**
+ * Check if a user is whitelisted for the extension
+ * GET /is-active?email=user@example.com  → { active:true/false }
+ */
+app.get('/is-active', (req, res) => {
+  const email = (req.query.email || '').toLowerCase();
+  res.json({ active: isAllowed(email) });
+});
+
+/**
  * Stripe webhook endpoint to record completed checkouts
  */
 app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -83,6 +94,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
       console.log('Webhook received for Session', session.id);
       const email = session.client_reference_id || session.customer_email || 'unknown';
       const timestamp = new Date().toISOString();
+      addEmail(email); // whitelist for Chrome extension
 
       // We already know this is a paid session; use a generic plan label
       const fullPlan = session.metadata?.planName || session?.display_items?.[0]?.custom?.name || 'Subscription';
