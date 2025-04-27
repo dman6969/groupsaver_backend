@@ -56,6 +56,7 @@ app.post('/create-session', express.json(), async (req, res) => {
       cancel_url: `https://dman6969.github.io/group_saver/cancel.html`,
       expand: ['line_items.data.price.product']   // <- NEW: include full line_items in webhook payload
     });
+    console.log(`Created Checkout Session ${session.id} for ${clientEmail} with priceId ${priceId}`);
     res.json({ sessionId: session.id });
   } catch (err) {
     console.error('Error creating checkout session:', err);
@@ -79,6 +80,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
   if (event.type === 'checkout.session.completed') {
     try {
       const session = event.data.object;
+      console.log('Webhook received for Session', session.id);
       const email = session.client_reference_id || session.customer_email || 'unknown';
       const timestamp = new Date().toISOString();
 
