@@ -26,6 +26,7 @@ await doc.useServiceAccountAuth({
 });
 await doc.loadInfo();
 const sheet = doc.sheetsByTitle['Paid'];
+await sheet.loadHeaderRow(); // ensure header row (Email | Plan | Timestamp) is loaded
 
 const app = express();
 app.use(cors({
