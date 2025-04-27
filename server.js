@@ -20,13 +20,17 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Load and access the "Paid" sheet (using updated google-spreadsheet syntax)
 const doc = new GoogleSpreadsheet('1wgsIPnScSk8JMPCvoEaa5YeeEkil9TjbniY1v1VTBfI');
-await doc.useServiceAccountAuth({
-  client_email: creds.client_email,
-  private_key: creds.private_key,
-});
-await doc.loadInfo();
-const sheet = doc.sheetsByTitle['Paid'];
-await sheet.loadHeaderRow(); // ensure header row (Email | Plan | Timestamp) is loaded
+let sheet; // will be initialised asynchronously
+(async () => {
+  await doc.useServiceAccountAuth({
+    client_email: creds.client_email,
+    private_key: creds.private_key,
+  });
+  await doc.loadInfo();
+  sheet = doc.sheetsByTitle['Paid'];
+  await sheet.loadHeaderRow();   // ensure header row exists
+  console.log('✅ Google Sheet loaded and ready');
+})();
 
 const app = express();
 app.use(cors({
@@ -78,33 +82,8 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
       const email = session.client_reference_id || session.customer_email || 'unknown';
       const timestamp = new Date().toISOString();
 
-      // ---------- Fetch the plan details ----------
-      // Some Stripe CLI fixtures return a session ID that no longer exists
-      // by the time we request listLineItems.  Instead, expand line_items
-      // right on the session so we always have them.
-      let lineItems;
-
-      if (session.line_items) {
-        // Already expanded (live checkout with expand or future API version)
-        lineItems = session.line_items;
-      } else {
-        // Retrieve again with the expand parameter so we get line_items
-        const sessWithItems = await stripe.checkout.sessions.retrieve(session.id, {
-          expand: ['line_items.data.price.product']
-        });
-        lineItems = sessWithItems.line_items;
-      }
-
-      const priceInfo = lineItems.data[0].price;
-      const product =
-        typeof priceInfo.product === 'string'
-          ? await stripe.products.retrieve(priceInfo.product)
-          : priceInfo.product;
-
-      const planName = product.name || priceInfo.nickname || 'Unknown Plan';
-      const interval = priceInfo.recurring?.interval || 'one-time';
-      const fullPlan = `${planName} (${interval})`;
-
+      // We already know this is a paid session; use a generic plan label
+      const fullPlan = session.metadata?.planName || session?.display_items?.[0]?.custom?.name || 'Subscription';
       // Append to Google Sheet
       await sheet.addRow({ Email: email, Plan: fullPlan, Timestamp: timestamp });
       console.log(`✅ User ${email} subscribed to ${fullPlan}`);
