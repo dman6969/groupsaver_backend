@@ -36,10 +36,12 @@ let sheet; // will be initialised asynchronously
 const app = express();
 app.use(cors({
   origin: [
-    'https://dman6969.github.io',   // production static site
-    'chrome-extension://*',      // allow extension requests
-    'http://localhost:5500',        // local dev server for index.html
-    'http://localhost:3000'         // self‑origin (optional)
+    'https://dman6969.github.io',
+    'https://groupsaverai.com',
+    'https://www.groupsaverai.com',
+    'chrome-extension://*',
+    'http://localhost:5500',
+    'http://localhost:3000'
   ]
 }));
 
@@ -54,8 +56,8 @@ app.post('/create-session', express.json(), async (req, res) => {
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'subscription',
       client_reference_id: clientEmail,
-      success_url: `https://dman6969.github.io/group_saver/success.html?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `https://dman6969.github.io/group_saver/cancel.html`,
+      success_url: `https://groupsaverai.com/success.html?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `https://groupsaverai.com/cancel.html`,
       expand: ['line_items.data.price.product']   // <- NEW: include full line_items in webhook payload
     });
     console.log(`Created Checkout Session ${session.id} for ${clientEmail} with priceId ${priceId}`);
