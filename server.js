@@ -1,4 +1,3 @@
-import { addEmail, removeEmail, isAllowed } from './whitelist.js';
 import express from 'express';
 import Stripe from 'stripe';
 import cors from 'cors';
@@ -72,9 +71,16 @@ app.post('/create-session', express.json(), async (req, res) => {
  * Check if a user is whitelisted for the extension
  * GET /is-active?email=user@example.com  → { active:true/false }
  */
-app.get('/is-active', (req, res) => {
-  const email = (req.query.email || '').toLowerCase();
-  res.json({ active: isAllowed(email) });
+app.get('/is-active', async (req, res) => {
+  try {
+    const email = (req.query.email || '').toLowerCase();
+    const rows = await sheet.getRows();
+    const active = rows.some(row => row.Email?.toLowerCase() === email);
+    res.json({ active });
+  } catch (err) {
+    console.error('Error checking active status:', err);
+    res.status(500).json({ active: false });
+  }
 });
 
 /**
